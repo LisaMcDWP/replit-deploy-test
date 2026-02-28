@@ -4,17 +4,21 @@ let bigqueryClient: BigQuery | null = null;
 
 export function getBigQueryClient(): BigQuery {
   if (!bigqueryClient) {
-    const keyJson = process.env.GCP_SERVICE_ACCOUNT_KEY;
-    if (!keyJson) {
-      throw new Error("GCP_SERVICE_ACCOUNT_KEY environment variable is not set");
+    const projectId = process.env.GCP_PROJECT_ID;
+    if (!projectId) {
+      throw new Error("GCP_PROJECT_ID environment variable is not set");
     }
 
-    const credentials = JSON.parse(keyJson);
+    const keyJson = process.env.GCP_SERVICE_ACCOUNT_KEY;
 
-    bigqueryClient = new BigQuery({
-      projectId: process.env.GCP_PROJECT_ID,
-      credentials,
-    });
+    if (keyJson) {
+      const credentials = JSON.parse(keyJson);
+      bigqueryClient = new BigQuery({ projectId, credentials });
+      console.log("BigQuery: Using service account key credentials");
+    } else {
+      bigqueryClient = new BigQuery({ projectId });
+      console.log("BigQuery: Using Application Default Credentials (ADC)");
+    }
   }
   return bigqueryClient;
 }
