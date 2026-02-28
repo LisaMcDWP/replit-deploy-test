@@ -1,21 +1,29 @@
 import { useState } from "react";
 import { 
-  CheckCircle2, 
-  Circle, 
-  LayoutDashboard, 
+  ListTodo,
+  Calendar,
   Settings, 
   Search, 
   Plus, 
   MoreVertical,
   Bell,
-  ListTodo,
-  Calendar,
   Filter
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // --- Mock Data ---
 const MOCK_OBJECTIVES = [
@@ -30,6 +38,33 @@ const MOCK_OBJECTIVES = [
 
 export default function Home() {
   const [objectives, setObjectives] = useState(MOCK_OBJECTIVES);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState("");
+  const [newPriority, setNewPriority] = useState("");
+  const [newTargetDate, setNewTargetDate] = useState("");
+
+  const handleAddObjective = () => {
+    if (!newTitle || !newCategory || !newPriority || !newTargetDate) return;
+
+    const newObj = {
+      id: objectives.length + 1,
+      title: newTitle,
+      category: newCategory,
+      priority: newPriority,
+      targetDate: newTargetDate,
+      status: "pending"
+    };
+
+    setObjectives([newObj, ...objectives]);
+    setIsAddModalOpen(false);
+    
+    // Reset form
+    setNewTitle("");
+    setNewCategory("");
+    setNewPriority("");
+    setNewTargetDate("");
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -68,7 +103,7 @@ export default function Home() {
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
           <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 mt-2 px-2">Menu</div>
           <Button variant="ghost" className="w-full justify-start text-slate-600 bg-slate-100/50" data-testid="nav-objectives">
-            <LayoutDashboard className="w-5 h-5 mr-3 text-primary" />
+            <ListTodo className="w-5 h-5 mr-3 text-primary" />
             Objectives List
           </Button>
           <Button variant="ghost" className="w-full justify-start text-slate-500 hover:text-slate-900" data-testid="nav-calendar">
@@ -100,10 +135,78 @@ export default function Home() {
             <Button variant="outline" size="icon" className="relative text-slate-500 rounded-full border-slate-200">
               <Bell className="w-5 h-5" />
             </Button>
-            <Button className="rounded-full shadow-sm shadow-primary/20" data-testid="button-add-objective">
-              <Plus className="w-4 h-4 mr-2" />
-              New Objective
-            </Button>
+            
+            <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-full shadow-sm shadow-primary/20" data-testid="button-add-objective">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Objective
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>Create New Objective</DialogTitle>
+                  <DialogDescription>
+                    Define a new patient activation objective to track across the system.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Objective Title</Label>
+                    <Input 
+                      id="title" 
+                      placeholder="e.g. Standardize physical therapy protocol" 
+                      value={newTitle}
+                      onChange={(e) => setNewTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="category">Category</Label>
+                      <Select value={newCategory} onValueChange={setNewCategory}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Physical Therapy">Physical Therapy</SelectItem>
+                          <SelectItem value="Monitoring">Monitoring</SelectItem>
+                          <SelectItem value="Education">Education</SelectItem>
+                          <SelectItem value="Integration">Integration</SelectItem>
+                          <SelectItem value="Assessment">Assessment</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="priority">Priority</Label>
+                      <Select value={newPriority} onValueChange={setNewPriority}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="low">Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="targetDate">Target Date</Label>
+                    <Input 
+                      id="targetDate" 
+                      type="date"
+                      value={newTargetDate}
+                      onChange={(e) => setNewTargetDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
+                  <Button onClick={handleAddObjective} disabled={!newTitle || !newCategory || !newPriority || !newTargetDate}>Save Objective</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
           </div>
         </header>
 
@@ -158,7 +261,7 @@ export default function Home() {
                           </span>
                         </td>
                         <td className="px-6 py-4 text-slate-600">
-                          {new Date(obj.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          {new Date(obj.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }, { timeZone: 'UTC' })}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
@@ -167,6 +270,13 @@ export default function Home() {
                         </td>
                       </tr>
                     ))}
+                    {objectives.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
+                          No objectives found. Click "New Objective" to add one.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
