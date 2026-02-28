@@ -1,0 +1,19 @@
+les/cloudbuild.builds.editor roles/run.admin roles/iam.serviceAccountUser roles/bigquery.dataEditor roles/bigquery.jobUser roles/storage.admin roles/viewer; do gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:${SERVICE_ACCOUNT}" --role="$ROLE" --quiet; done
+
+gsutil iam ch serviceAccount:${SERVICE_ACCOUNT}:objectAdmin gs://${LOGS_BUCKET}
+
+bq --location=$REGION mk --dataset --exists ${PROJECT_ID}:activation_prod
+
+echo "Setup complete!"
+Project 'waypoint-all-client-reporting' lacks an 'environment' tag. Please create or add a tag with key 'environment' and a value like 'Production', 'Development', 'Test', or 'Staging'. Add an 'environment' tag using `gcloud resource-manager tags bindings create`. See https://cloud.google.com/resource-manager/docs/creating-managing-projects#designate_project_environments_with_tags for details.
+Updated property [core/project].
+Operation "operations/acat.p2-307641333654-022bb5fe-7294-4bb0-a70a-bc22912b1737" finished successfully.
+Creating gs://waypoint-all-client-reporting-cloudbuild-logs/...
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+ERROR: (gcloud.projects.add-iam-policy-binding) Adding a binding without specifying a condition to a policy containing conditions is prohibited in non-interactive mode. Run the command again with `--condition=None`
+FATAL Flags parsing error: Unknown command line flag 'exists'
