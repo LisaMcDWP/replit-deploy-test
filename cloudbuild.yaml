@@ -1,6 +1,7 @@
+logsBucket: 'gs://waypoint-all-client-reporting-cloudbuild-logs'
+
 options:
   logging: CLOUD_LOGGING_ONLY
-  defaultLogsBucketBehavior: REGIONAL_USER_OWNED_BUCKET
 
 steps:
   - name: 'gcr.io/cloud-builders/docker'
