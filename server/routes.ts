@@ -10,7 +10,12 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
-  await ensureTableExists();
+  try {
+    await ensureTableExists();
+  } catch (error: any) {
+    console.error("BigQuery table setup warning:", error.message);
+    console.error("The app will start but BigQuery operations may fail until permissions are configured.");
+  }
 
   app.get("/api/objectives", async (_req, res) => {
     try {
