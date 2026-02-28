@@ -47,9 +47,10 @@ export default function Home() {
     const params = new URLSearchParams(window.location.search);
     return params.get("search") || "";
   });
-  const [priorityFilter, setPriorityFilter] = useState(() => {
+  const [priorityFilters, setPriorityFilters] = useState<string[]>(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("priority") || "all";
+    const priority = params.get("priority");
+    return priority ? priority.split(",") : [];
   });
 
   const updateUrlParams = (key: string, value: string, defaultValue: string) => {
@@ -62,9 +63,25 @@ export default function Home() {
     window.history.replaceState({}, "", url.toString());
   };
 
-  const handlePriorityChange = (value: string) => {
-    setPriorityFilter(value);
-    updateUrlParams("priority", value, "all");
+  const togglePriorityFilter = (value: string) => {
+    let updated: string[];
+    if (priorityFilters.includes(value)) {
+      updated = priorityFilters.filter((p) => p !== value);
+    } else {
+      updated = [...priorityFilters, value];
+    }
+    setPriorityFilters(updated);
+    updateUrlParams("priority", updated.length > 0 ? updated.join(",") : "", "");
+  };
+
+  const clearPriorityFilters = () => {
+    setPriorityFilters([]);
+    updateUrlParams("priority", "", "");
+  };
+
+  const getPriorityFilterLabel = () => {
+    if (priorityFilters.length === 0) return "All Priorities";
+    return priorityFilters.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(", ");
   };
 
   const handleSearchChange = (value: string) => {
@@ -169,7 +186,7 @@ export default function Home() {
   const filteredObjectives = objectives.filter((obj) => {
     const matchesSearch = obj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       obj.category.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesPriority = priorityFilter === "all" || obj.priority === priorityFilter;
+    const matchesPriority = priorityFilters.length === 0 || priorityFilters.includes(obj.priority);
     return matchesSearch && matchesPriority;
   });
 
@@ -228,18 +245,26 @@ export default function Home() {
             />
           </div>
           <div className="flex items-center gap-4">
-            <Select value={priorityFilter} onValueChange={handlePriorityChange}>
-              <SelectTrigger className="w-[140px]" data-testid="select-filter-priority">
-                <Filter className="w-4 h-4 mr-2 text-slate-400" />
-                <SelectValue placeholder="Priority" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Priorities</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-[160px] justify-start" data-testid="select-filter-priority">
+                  <Filter className="w-4 h-4 mr-2 text-slate-400" />
+                  <span className="truncate">{getPriorityFilterLabel()}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-[160px]">
+                <DropdownMenuItem onClick={clearPriorityFilters} data-testid="filter-priority-all">
+                  {priorityFilters.length === 0 && <span className="mr-2">✓</span>}
+                  All Priorities
+                </DropdownMenuItem>
+                {["high", "medium", "low"].map((p) => (
+                  <DropdownMenuItem key={p} onClick={() => togglePriorityFilter(p)} data-testid={`filter-priority-${p}`}>
+                    {priorityFilters.includes(p) && <span className="mr-2">✓</span>}
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-full shadow-sm shadow-primary/20" data-testid="button-add-objective">
