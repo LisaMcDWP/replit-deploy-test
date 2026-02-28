@@ -1,38 +1,99 @@
-import { type User, type InsertUser } from "@shared/schema";
+import { type Objective, type InsertObjective } from "@shared/schema";
+import { getBigQueryClient, getDataset, TABLE_NAME } from "./bigquery";
 import { randomUUID } from "crypto";
 
-// modify the interface with any CRUD methods
-// you might need
-
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getObjectives(): Promise<Objective[]>;
+  getObjective(id: string): Promise<Objective | undefined>;
+  createObjective(objective: InsertObjective): Promise<Objective>;
+  updateObjective(id: string, updates: Partial<InsertObjective>): Promise<Objective | undefined>;
+  deleteObjective(id: string): Promise<boolean>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class BigQueryStorage implements IStorage {
+  private get fullTable() {
+    return `\`${process.env.GCP_PROJECT_ID}.${getDataset()}.${TABLE_NAME}\``;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async getObjectives(): Promise<Objective[]> {
+    const bq = getBigQueryClient();
+    const query = `SELECT id, title, category, status, priority, targetDate FROM ${this.fullTable} ORDER BY targetDate ASC`;
+    const [rows] = await bq.query({ query });
+    return rows as Objective[];
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async getObjective(id: string): Promise<Objective | undefined> {
+    const bq = getBigQueryClient();
+    const query = `SELECT id, title, category, status, priority, targetDate FROM ${this.fullTable} WHERE id = @id LIMIT 1`;
+    const [rows] = await bq.query({ query, params: { id } });
+    return (rows as Objective[])[0] || undefined;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createObjective(insert: InsertObjective): Promise<Objective> {
+    const bq = getBigQueryClient();
+    const dataset = getDataset();
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+
+    const objective: Objective = {
+      id,
+      title: insert.title,
+      category: insert.category,
+      status: insert.status || "pending",
+      priority: insert.priority,
+      targetDate: insert.targetDate,
+    };
+
+    await bq.dataset(dataset).table(TABLE_NAME).insert([objective]);
+    return objective;
+  }
+
+  async updateObjective(id: string, updates: Partial<InsertObjective>): Promise<Objective | undefined> {
+    const bq = getBigQueryClient();
+
+    const existing = await this.getObjective(id);
+    if (!existing) return undefined;
+
+    const setClauses: string[] = [];
+    const params: Record<string, string> = { id };
+
+    if (updates.title !== undefined) {
+      setClauses.push("title = @title");
+      params.title = updates.title;
+    }
+    if (updates.category !== undefined) {
+      setClauses.push("category = @category");
+      params.category = updates.category;
+    }
+    if (updates.status !== undefined) {
+      setClauses.push("status = @status");
+      params.status = updates.status;
+    }
+    if (updates.priority !== undefined) {
+      setClauses.push("priority = @priority");
+      params.priority = updates.priority;
+    }
+    if (updates.targetDate !== undefined) {
+      setClauses.push("targetDate = @targetDate");
+      params.targetDate = updates.targetDate;
+    }
+
+    if (setClauses.length === 0) return existing;
+
+    const query = `UPDATE ${this.fullTable} SET ${setClauses.join(", ")} WHERE id = @id`;
+    await bq.query({ query, params });
+
+    return this.getObjective(id);
+  }
+
+  async deleteObjective(id: string): Promise<boolean> {
+    const bq = getBigQueryClient();
+    const existing = await this.getObjective(id);
+    if (!existing) return false;
+
+    const query = `DELETE FROM ${this.fullTable} WHERE id = @id`;
+    await bq.query({ query, params: { id } });
+    return true;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new BigQueryStorage();

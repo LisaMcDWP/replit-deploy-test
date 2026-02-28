@@ -1,15 +1,18 @@
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { 
   ListTodo,
-  Calendar,
-  Settings, 
   Search, 
   Plus, 
   MoreVertical,
   Bell,
-  Filter
+  Filter,
+  Trash2,
+  Pencil,
+  Loader2
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,47 +27,122 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-// --- Mock Data ---
-const MOCK_OBJECTIVES = [
-  { id: 1, title: "Standardize post-op knee replacement physical therapy protocol", category: "Physical Therapy", targetDate: "2024-03-15", status: "in-progress", priority: "high" },
-  { id: 2, title: "Develop automated SMS reminders for morning blood glucose logging", category: "Monitoring", targetDate: "2024-03-20", status: "pending", priority: "medium" },
-  { id: 3, title: "Create new patient education module on managing diet for Type 2 Diabetes", category: "Education", targetDate: "2024-04-01", status: "pending", priority: "medium" },
-  { id: 4, title: "Implement tracking for '30-min brisk walk' cardiac rehab adherence", category: "Physical Therapy", targetDate: "2024-03-10", status: "completed", priority: "high" },
-  { id: 5, title: "Review and update standard discharge medication list handouts", category: "Education", targetDate: "2024-02-28", status: "completed", priority: "low" },
-  { id: 6, title: "Integrate continuous glucose monitor data into main dashboard", category: "Integration", targetDate: "2024-05-15", status: "pending", priority: "high" },
-  { id: 7, title: "Establish baseline activation scores for all new admissions in Q2", category: "Assessment", targetDate: "2024-06-30", status: "in-progress", priority: "high" },
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
+import type { Objective } from "@shared/schema";
 
 export default function Home() {
-  const [objectives, setObjectives] = useState(MOCK_OBJECTIVES);
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("");
   const [newPriority, setNewPriority] = useState("");
   const [newTargetDate, setNewTargetDate] = useState("");
 
-  const handleAddObjective = () => {
-    if (!newTitle || !newCategory || !newPriority || !newTargetDate) return;
+  const [editTitle, setEditTitle] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editPriority, setEditPriority] = useState("");
+  const [editStatus, setEditStatus] = useState("");
+  const [editTargetDate, setEditTargetDate] = useState("");
 
-    const newObj = {
-      id: objectives.length + 1,
-      title: newTitle,
-      category: newCategory,
-      priority: newPriority,
-      targetDate: newTargetDate,
-      status: "pending"
-    };
+  const { data: objectives = [], isLoading } = useQuery<Objective[]>({
+    queryKey: ["/api/objectives"],
+  });
 
-    setObjectives([newObj, ...objectives]);
-    setIsAddModalOpen(false);
-    
-    // Reset form
+  const createMutation = useMutation({
+    mutationFn: async (data: { title: string; category: string; priority: string; targetDate: string }) => {
+      const res = await apiRequest("POST", "/api/objectives", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+      setIsAddModalOpen(false);
+      resetNewForm();
+      toast({ title: "Objective created", description: "New activation objective has been added." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: { id: string; title?: string; category?: string; priority?: string; status?: string; targetDate?: string }) => {
+      const res = await apiRequest("PATCH", `/api/objectives/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+      setIsEditModalOpen(false);
+      setEditingObjective(null);
+      toast({ title: "Objective updated", description: "Activation objective has been updated." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/objectives/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/objectives"] });
+      toast({ title: "Objective deleted", description: "Activation objective has been removed." });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const resetNewForm = () => {
     setNewTitle("");
     setNewCategory("");
     setNewPriority("");
     setNewTargetDate("");
   };
+
+  const handleAdd = () => {
+    if (!newTitle || !newCategory || !newPriority || !newTargetDate) return;
+    createMutation.mutate({ title: newTitle, category: newCategory, priority: newPriority, targetDate: newTargetDate });
+  };
+
+  const openEdit = (obj: Objective) => {
+    setEditingObjective(obj);
+    setEditTitle(obj.title);
+    setEditCategory(obj.category);
+    setEditPriority(obj.priority);
+    setEditStatus(obj.status);
+    setEditTargetDate(obj.targetDate);
+    setIsEditModalOpen(true);
+  };
+
+  const handleEdit = () => {
+    if (!editingObjective) return;
+    updateMutation.mutate({
+      id: editingObjective.id,
+      title: editTitle,
+      category: editCategory,
+      priority: editPriority,
+      status: editStatus,
+      targetDate: editTargetDate,
+    });
+  };
+
+  const filteredObjectives = objectives.filter((obj) =>
+    obj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    obj.category.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -76,13 +154,13 @@ export default function Home() {
   };
 
   const getPriorityColor = (priority: string) => {
-     switch (priority) {
+    switch (priority) {
       case 'high': return 'text-rose-600 bg-rose-50';
       case 'medium': return 'text-amber-600 bg-amber-50';
       case 'low': return 'text-slate-600 bg-slate-50';
       default: return 'text-slate-600 bg-slate-50';
     }
-  }
+  };
 
   const getStatusLabel = (status: string) => {
     return status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
@@ -91,7 +169,6 @@ export default function Home() {
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900 overflow-hidden">
       
-      {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex z-10">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
           <div className="flex items-center gap-2 text-primary font-bold text-lg">
@@ -109,23 +186,19 @@ export default function Home() {
         </nav>
       </aside>
 
-      {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-        {/* Header */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 z-10 shrink-0">
           <div className="flex items-center w-full max-w-md relative">
             <Search className="w-5 h-5 absolute left-3 text-slate-400" />
             <Input 
               placeholder="Search objectives..." 
               className="pl-10 bg-slate-50 border-transparent focus-visible:ring-primary/20 focus-visible:border-primary/50"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               data-testid="input-search"
             />
           </div>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" className="relative text-slate-500 rounded-full border-slate-200">
-              <Bell className="w-5 h-5" />
-            </Button>
-            
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-full shadow-sm shadow-primary/20" data-testid="button-add-objective">
@@ -137,7 +210,7 @@ export default function Home() {
                 <DialogHeader>
                   <DialogTitle>Create New Objective</DialogTitle>
                   <DialogDescription>
-                    Define a new patient activation objective to track across the system.
+                    Define a new patient activation objective to track.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -148,13 +221,14 @@ export default function Home() {
                       placeholder="e.g. Standardize physical therapy protocol" 
                       value={newTitle}
                       onChange={(e) => setNewTitle(e.target.value)}
+                      data-testid="input-new-title"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="category">Category</Label>
                       <Select value={newCategory} onValueChange={setNewCategory}>
-                        <SelectTrigger>
+                        <SelectTrigger data-testid="select-new-category">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -169,7 +243,7 @@ export default function Home() {
                     <div className="grid gap-2">
                       <Label htmlFor="priority">Priority</Label>
                       <Select value={newPriority} onValueChange={setNewPriority}>
-                        <SelectTrigger>
+                        <SelectTrigger data-testid="select-new-priority">
                           <SelectValue placeholder="Select priority" />
                         </SelectTrigger>
                         <SelectContent>
@@ -187,20 +261,26 @@ export default function Home() {
                       type="date"
                       value={newTargetDate}
                       onChange={(e) => setNewTargetDate(e.target.value)}
+                      data-testid="input-new-target-date"
                     />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancel</Button>
-                  <Button onClick={handleAddObjective} disabled={!newTitle || !newCategory || !newPriority || !newTargetDate}>Save Objective</Button>
+                  <Button 
+                    onClick={handleAdd} 
+                    disabled={!newTitle || !newCategory || !newPriority || !newTargetDate || createMutation.isPending}
+                    data-testid="button-save-objective"
+                  >
+                    {createMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    Save Objective
+                  </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-
           </div>
         </header>
 
-        {/* Content */}
         <div className="flex-1 overflow-auto p-6 lg:p-8">
           <div className="max-w-5xl mx-auto space-y-6">
             
@@ -209,72 +289,177 @@ export default function Home() {
                 <h1 className="text-2xl font-bold text-slate-900">Activation Objectives</h1>
                 <p className="text-slate-500 mt-1">Manage and track system-wide patient activation goals.</p>
               </div>
-              
-              <div className="flex gap-2">
-                 <Button variant="outline" className="bg-white" data-testid="button-filter">
-                  <Filter className="w-4 h-4 mr-2" />
-                  Filter
-                </Button>
-              </div>
             </div>
 
             <Card className="border-none shadow-sm bg-white overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left">
-                  <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
-                    <tr>
-                      <th className="px-6 py-4 font-medium">Objective Title</th>
-                      <th className="px-6 py-4 font-medium">Category</th>
-                      <th className="px-6 py-4 font-medium">Status</th>
-                      <th className="px-6 py-4 font-medium">Priority</th>
-                      <th className="px-6 py-4 font-medium">Target Date</th>
-                      <th className="px-6 py-4 font-medium text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {objectives.map((obj) => (
-                      <tr key={obj.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="px-6 py-4">
-                          <p className="font-medium text-slate-900">{obj.title}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-slate-600">{obj.category}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                           <Badge variant="secondary" className={`font-medium ${getStatusColor(obj.status)}`}>
-                            {getStatusLabel(obj.status)}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4">
-                           <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getPriorityColor(obj.priority)}`}>
-                            {obj.priority.charAt(0).toUpperCase() + obj.priority.slice(1)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 text-slate-600">
-                          {new Date(obj.targetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }, { timeZone: 'UTC' })}
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                    {objectives.length === 0 && (
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  <span className="ml-3 text-slate-500">Loading objectives from BigQuery...</span>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-100">
                       <tr>
-                        <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
-                          No objectives found. Click "New Objective" to add one.
-                        </td>
+                        <th className="px-6 py-4 font-medium">Objective Title</th>
+                        <th className="px-6 py-4 font-medium">Category</th>
+                        <th className="px-6 py-4 font-medium">Status</th>
+                        <th className="px-6 py-4 font-medium">Priority</th>
+                        <th className="px-6 py-4 font-medium">Target Date</th>
+                        <th className="px-6 py-4 font-medium text-right">Actions</th>
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredObjectives.map((obj) => (
+                        <tr key={obj.id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="px-6 py-4">
+                            <p className="font-medium text-slate-900" data-testid={`text-title-${obj.id}`}>{obj.title}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-slate-600">{obj.category}</span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Badge variant="secondary" className={`font-medium ${getStatusColor(obj.status)}`}>
+                              {getStatusLabel(obj.status)}
+                            </Badge>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${getPriorityColor(obj.priority)}`}>
+                              {obj.priority.charAt(0).toUpperCase() + obj.priority.slice(1)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-slate-600">
+                            {new Date(obj.targetDate + "T00:00:00").toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-600" data-testid={`button-actions-${obj.id}`}>
+                                  <MoreVertical className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => openEdit(obj)} data-testid={`button-edit-${obj.id}`}>
+                                  <Pencil className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => deleteMutation.mutate(obj.id)} 
+                                  className="text-destructive focus:text-destructive"
+                                  data-testid={`button-delete-${obj.id}`}
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                      {filteredObjectives.length === 0 && !isLoading && (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                            {searchQuery ? "No objectives match your search." : "No objectives yet. Click \"New Objective\" to add one."}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </Card>
-
           </div>
         </div>
       </main>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Objective</DialogTitle>
+            <DialogDescription>
+              Update the activation objective details.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="edit-title">Objective Title</Label>
+              <Input 
+                id="edit-title"
+                value={editTitle}
+                onChange={(e) => setEditTitle(e.target.value)}
+                data-testid="input-edit-title"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Category</Label>
+                <Select value={editCategory} onValueChange={setEditCategory}>
+                  <SelectTrigger data-testid="select-edit-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Physical Therapy">Physical Therapy</SelectItem>
+                    <SelectItem value="Monitoring">Monitoring</SelectItem>
+                    <SelectItem value="Education">Education</SelectItem>
+                    <SelectItem value="Integration">Integration</SelectItem>
+                    <SelectItem value="Assessment">Assessment</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Status</Label>
+                <Select value={editStatus} onValueChange={setEditStatus}>
+                  <SelectTrigger data-testid="select-edit-status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in-progress">In Progress</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Priority</Label>
+                <Select value={editPriority} onValueChange={setEditPriority}>
+                  <SelectTrigger data-testid="select-edit-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Target Date</Label>
+                <Input 
+                  type="date"
+                  value={editTargetDate}
+                  onChange={(e) => setEditTargetDate(e.target.value)}
+                  data-testid="input-edit-target-date"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>Cancel</Button>
+            <Button 
+              onClick={handleEdit} 
+              disabled={updateMutation.isPending}
+              data-testid="button-update-objective"
+            >
+              {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              Update Objective
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

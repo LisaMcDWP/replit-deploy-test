@@ -42,3 +42,9 @@ waitForPort = 5000
 [agent]
 stack = "MOCKUP_JS"
 mockupState = "FULLSTACK"
+
+[userenv]
+
+[userenv.shared]
+GCP_PROJECT_ID = "waypoint-all-client-reporting"
+BIGQUERY_DATASET = "replit_test_deploy"
