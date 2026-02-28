@@ -1,0 +1,65 @@
+
+✔
+REVISION: activation-tracker-00006-xl9
+ACTIVE: yes
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 03:30:01 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+
+✔
+REVISION: activation-tracker-00005-v5q
+ACTIVE: 
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 03:23:24 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+
+✔
+REVISION: activation-tracker-00004-x8p
+ACTIVE: 
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 03:08:12 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+
+✔
+REVISION: activation-tracker-00003-pvp
+ACTIVE: 
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 03:02:50 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+
+✔
+REVISION: activation-tracker-00002-vjq
+ACTIVE: 
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 02:42:59 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+
+✔
+REVISION: activation-tracker-00001-28k
+ACTIVE: 
+SERVICE: activation-tracker
+DEPLOYED: 2026-02-28 02:20:37 UTC
+DEPLOYED BY: 307641333654-compute@developer.gserviceaccount.com
+lisa_mcdermott@cloudshell:/tmp/replit-deploy-test (waypoint-all-client-reporting)$ 
+lisa_mcdermott@cloudshell:/tmp/replit-deploy-test (waypoint-all-client-reporting)$ gcloud run services logs read activation-tracker --project=waypoint-all-client-reporting --region=us-central1 --limit=20
+2026-02-28 03:32:57 GET 304 https://activation-tracker-307641333654.us-central1.run.app/assets/index-BL0_9pAh.css
+2026-02-28 03:32:57 GET 304 https://activation-tracker-307641333654.us-central1.run.app/assets/index-_TsCGfXa.js
+2026-02-28 03:32:57 GET 304 https://activation-tracker-307641333654.us-central1.run.app/api/objectives
+2026-02-28 03:32:57 3:32:57 AM [express] GET /api/objectives 304 in 357ms :: [{"id":"9cf4c164-49a7-4d96-8252-046b3464ec5a","title":"test3jjjj","category":"Physical Therapy","status":"pending","priority":"high","targetDate":"2026-02-27"},{"id":"a40e09df-b380-4e56-b36c-8641b2c396fb","title":"med","category":"Physical Therapy","status":"pending","priority":"medium","targetDate":"2026-02-27"}]
+2026-02-28 03:33:18 GET 304 https://activation-tracker-307641333654.us-central1.run.app/?priority=High
+2026-02-28 03:33:18 GET 200 https://activation-tracker-307641333654.us-central1.run.app/assets/index-BL0_9pAh.css
+2026-02-28 03:33:18 GET 200 https://activation-tracker-307641333654.us-central1.run.app/assets/index-_TsCGfXa.js
+2026-02-28 03:33:18 GET 304 https://activation-tracker-307641333654.us-central1.run.app/api/objectives
+2026-02-28 03:33:18 3:33:18 AM [express] GET /api/objectives 304 in 334ms :: [{"id":"9cf4c164-49a7-4d96-8252-046b3464ec5a","title":"test3jjjj","category":"Physical Therapy","status":"pending","priority":"high","targetDate":"2026-02-27"},{"id":"a40e09df-b380-4e56-b36c-8641b2c396fb","title":"med","category":"Physical Therapy","status":"pending","priority":"medium","targetDate":"2026-02-27"}]
+2026-02-28 03:33:44 GET 200 https://activation-tracker-307641333654.us-central1.run.app/?priority=High
+2026-02-28 03:33:44 GET 200 https://activation-tracker-307641333654.us-central1.run.app/assets/index-BL0_9pAh.css
+2026-02-28 03:33:44 GET 200 https://activation-tracker-307641333654.us-central1.run.app/assets/index-_TsCGfXa.js
+2026-02-28 03:33:44 GET 304 https://activation-tracker-307641333654.us-central1.run.app/api/objectives
+2026-02-28 03:33:44 GET 200 https://activation-tracker-307641333654.us-central1.run.app/favicon.png
+2026-02-28 03:33:44 3:33:44 AM [express] GET /api/objectives 304 in 399ms :: [{"id":"9cf4c164-49a7-4d96-8252-046b3464ec5a","title":"test3jjjj","category":"Physical Therapy","status":"pending","priority":"high","targetDate":"2026-02-27"},{"id":"a40e09df-b380-4e56-b36c-8641b2c396fb","title":"med","category":"Physical Therapy","status":"pending","priority":"medium","targetDate":"2026-02-27"}]
+2026-02-28 03:35:00 GET 304 https://activation-tracker-307641333654.us-central1.run.app/
+2026-02-28 03:35:00 GET 304 https://activation-tracker-307641333654.us-central1.run.app/assets/index-BL0_9pAh.css
+2026-02-28 03:35:00 GET 304 https://activation-tracker-307641333654.us-central1.run.app/assets/index-_TsCGfXa.js
+2026-02-28 03:35:01 GET 304 https://activation-tracker-307641333654.us-central1.run.app/api/objectives
+2026-02-28 03:35:01 3:35:01 AM [express] GET /api/objectives 304 in 395ms :: [{"id":"9cf4c164-49a7-4d96-8252-046b3464ec5a","title":"test3jjjj","category":"Physical Therapy","status":"pending","priority":"high","targetDate":"2026-02-27"},{"id":"a40e09df-b380-4e56-b36c-8641b2c396fb","title":"med","category":"Physical Therapy","status":"pending","priority":"medium","targetDate":"2026-02-27"}]
+lisa_mcdermott@cloudshell:/tmp/replit-deploy-test (waypoint-all-client-reporting)$ 
