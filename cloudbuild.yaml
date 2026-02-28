@@ -30,7 +30,7 @@ steps:
       - 'managed'
       - '--allow-unauthenticated'
       - '--set-env-vars'
-      - 'GCP_PROJECT_ID=$PROJECT_ID,BIGQUERY_DATASET=activation_prod'
+      - 'GCP_PROJECT_ID=$PROJECT_ID,BIGQUERY_DATASET=replit_test_deploy'
       - '--memory'
       - '512Mi'
       - '--cpu'
