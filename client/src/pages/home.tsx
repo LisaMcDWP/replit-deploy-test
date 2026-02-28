@@ -44,6 +44,7 @@ export default function Home() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("all");
 
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -139,10 +140,12 @@ export default function Home() {
     });
   };
 
-  const filteredObjectives = objectives.filter((obj) =>
-    obj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    obj.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredObjectives = objectives.filter((obj) => {
+    const matchesSearch = obj.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      obj.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesPriority = priorityFilter === "all" || obj.priority === priorityFilter;
+    return matchesSearch && matchesPriority;
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -199,6 +202,18 @@ export default function Home() {
             />
           </div>
           <div className="flex items-center gap-4">
+            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+              <SelectTrigger className="w-[140px]" data-testid="select-filter-priority">
+                <Filter className="w-4 h-4 mr-2 text-slate-400" />
+                <SelectValue placeholder="Priority" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Priorities</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
             <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
               <DialogTrigger asChild>
                 <Button className="rounded-full shadow-sm shadow-primary/20" data-testid="button-add-objective">
