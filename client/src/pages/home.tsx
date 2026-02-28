@@ -106,16 +106,6 @@ export default function Home() {
             <ListTodo className="w-5 h-5 mr-3 text-primary" />
             Objectives List
           </Button>
-          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:text-slate-900" data-testid="nav-calendar">
-            <Calendar className="w-5 h-5 mr-3" />
-            Timeline View
-          </Button>
-          
-          <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4 mt-8 px-2">System</div>
-          <Button variant="ghost" className="w-full justify-start text-slate-500 hover:text-slate-900" data-testid="nav-settings">
-            <Settings className="w-5 h-5 mr-3" />
-            Settings
-          </Button>
         </nav>
       </aside>
 
