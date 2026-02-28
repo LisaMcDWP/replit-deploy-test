@@ -43,8 +43,34 @@ export default function Home() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingObjective, setEditingObjective] = useState<Objective | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("search") || "";
+  });
+  const [priorityFilter, setPriorityFilter] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("priority") || "all";
+  });
+
+  const updateUrlParams = (key: string, value: string, defaultValue: string) => {
+    const url = new URL(window.location.href);
+    if (value === defaultValue) {
+      url.searchParams.delete(key);
+    } else {
+      url.searchParams.set(key, value);
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const handlePriorityChange = (value: string) => {
+    setPriorityFilter(value);
+    updateUrlParams("priority", value, "all");
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    updateUrlParams("search", value, "");
+  };
 
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState("");
@@ -197,12 +223,12 @@ export default function Home() {
               placeholder="Search objectives..." 
               className="pl-10 bg-slate-50 border-transparent focus-visible:ring-primary/20 focus-visible:border-primary/50"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => handleSearchChange(e.target.value)}
               data-testid="input-search"
             />
           </div>
           <div className="flex items-center gap-4">
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <Select value={priorityFilter} onValueChange={handlePriorityChange}>
               <SelectTrigger className="w-[140px]" data-testid="select-filter-priority">
                 <Filter className="w-4 h-4 mr-2 text-slate-400" />
                 <SelectValue placeholder="Priority" />
