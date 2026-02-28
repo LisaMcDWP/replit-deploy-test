@@ -31,7 +31,6 @@ export class BigQueryStorage implements IStorage {
 
   async createObjective(insert: InsertObjective): Promise<Objective> {
     const bq = getBigQueryClient();
-    const dataset = getDataset();
     const id = randomUUID();
 
     const objective: Objective = {
@@ -43,7 +42,19 @@ export class BigQueryStorage implements IStorage {
       targetDate: insert.targetDate,
     };
 
-    await bq.dataset(dataset).table(TABLE_NAME).insert([objective]);
+    const query = `INSERT INTO ${this.fullTable} (id, title, category, status, priority, targetDate) VALUES (@id, @title, @category, @status, @priority, @targetDate)`;
+    await bq.query({
+      query,
+      params: {
+        id: objective.id,
+        title: objective.title,
+        category: objective.category,
+        status: objective.status,
+        priority: objective.priority,
+        targetDate: objective.targetDate,
+      },
+    });
+
     return objective;
   }
 
